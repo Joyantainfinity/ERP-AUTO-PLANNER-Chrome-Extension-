@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ERP AUTO PLANNER</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    width: 360px;
+    padding: 14px;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+  h1 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h1 img { width: 20px; height: 20px; border-radius: 5px; }
+  h2 {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: #ffffff;
+  }
+  .section-editor {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+  }
+  .section-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .section-row:last-child { margin-bottom: 0; }
+  .reorder-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  .reorder-btns button {
+    width: 18px;
+    height: 13px;
+    min-width: 0;
+    padding: 0;
+    font-size: 8px;
+    line-height: 1;
+    background: #334155;
+    border-radius: 3px;
+  }
+  .reorder-btns button:hover { background: #475569; }
+  .reorder-btns button:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
+  .code-input {
+    width: 46px;
+    flex-shrink: 0;
+    padding: 5px 6px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+  .name-input {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 6px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+  .code-input:focus, .name-input:focus, #overheadInput:focus {
+    outline: none;
+    border-color: #38bdf8;
+  }
+  .remove-btn {
+    width: 22px;
+    height: 22px;
+    min-width: 0;
+    flex-shrink: 0;
+    padding: 0;
+    font-size: 12px;
+    background: #7f1d1d;
+    border-radius: 6px;
+  }
+  .remove-btn:hover { background: #991b1b; }
+  .add-btn {
+    background: #334155;
+    margin-bottom: 10px;
+    font-size: 12px;
+    padding: 8px;
+  }
+  .add-btn:hover { background: #475569; }
+  button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #1d4ed8; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  button.secondary { background: #059669; }
+  button.secondary:hover { background: #047857; }
+  #status, #wagesStatus {
+    margin-top: 10px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-height: 170px;
+    overflow: auto;
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  #status:empty, #wagesStatus:empty { display: none; padding: 0; margin-top: 0; }
+  .ok { color: #4ade80; }
+  .fail { color: #f87171; }
+  .hint {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .divider {
+    border-top: 1px solid #334155;
+    margin: 16px 0 14px;
+    padding-top: 14px;
+  }
+  .field-label {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    display: block;
+  }
+  #overheadInput {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #e2e8f0;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+  <h1><img src="icons/icon48.png" alt="" /> ERP AUTO PLANNER</h1>
+
+  <div class="section-editor" id="sectionList"></div>
+  <button id="addSectionBtn" class="add-btn">+ Add Section</button>
+  <button id="runBtn">Run on Planning Page ▶</button>
+  <div id="status"></div>
+  <div class="hint">Use ▲▼ to reorder, ✕ to remove, or add new rows. Open the order's planning page first, then click Run.</div>
+
+  <div class="divider">
+    <h2>Fill Wages</h2>
+    <label class="field-label" for="overheadInput">Total Overhead Cost (for this order)</label>
+    <input type="text" id="overheadInput" placeholder="e.g. 25.32" />
+    <button id="runWagesBtn" class="secondary">Run on Wages Page ▶</button>
+    <div id="wagesStatus"></div>
+    <div class="hint">Note: Actual Wages and Payable Wages will be set to 0.01 for every section. The total Overhead Cost is divided by however many section rows are found on the page (truncated to 2 decimals), and that per-section value is filled into every row.</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
