@@ -498,8 +498,8 @@ async function runAutomationInPage(sections) {
         const boxes = row.querySelectorAll('.MuiBox-root');
         if (boxes.length >= 2) {
           const rowCode = boxes[0].textContent.trim();
-          const rowName = boxes[1].textContent.trim();
-          if (rowCode === code && rowName === name) return row;
+          const rowName = normalizeSectionValue(boxes[1].textContent);
+          if (rowCode === code && rowName === normalizeSectionValue(name)) return row;
         }
       }
     }
@@ -551,16 +551,38 @@ async function runAutomationInPage(sections) {
     return null;
   }
 
-  // Verifies the selection actually took effect — checks only the value of inputs
-  // with placeholder="Select Section", not the whole page's text (otherwise the
-  // full master list on the right, which lists every section name, would cause
-  // false "confirmed" results)
-  function isSelectionConfirmed(sectionName) {
+  // The ERP now shows section values as "(93) Central Cutting" (code in parentheses
+  // before the name). Strip that optional "(digits)" prefix so both the old format
+  // ("Central Cutting") and the new one compare equal to the plain section name.
+  function normalizeSectionValue(value) {
+    return String(value || '')
+      .trim()
+      .replace(/^\(\s*\d+\s*\)\s*/, '')
+      .trim();
+  }
+
+  // How many "Select Section" inputs currently hold a value (i.e. filled rows)
+  function countFilledSections() {
     const inputs = document.querySelectorAll('input[placeholder="Select Section"]');
+    let count = 0;
     for (const inp of inputs) {
-      if (inp.value && inp.value.trim() === sectionName) return true;
+      if (inp.value && inp.value.trim() !== '') count++;
     }
-    return false;
+    return count;
+  }
+
+  // Verifies the selection actually took effect. Two independent signals:
+  //  1) the exact input we clicked now holds this section (either display format), or
+  //  2) the number of filled rows went up (works even if the display format changes again).
+  // We only look at inputs with placeholder="Select Section", never the page's text
+  // (the master list on the right contains every section name and would cause
+  // false "confirmed" results).
+  function isSelectionConfirmed(sectionName, filledBefore, trigger) {
+    const target = normalizeSectionValue(sectionName);
+    if (trigger && trigger.isConnected && normalizeSectionValue(trigger.value) === target) {
+      return true;
+    }
+    return countFilledSections() > filledBefore;
   }
 
   const results = [];
@@ -568,9 +590,18 @@ async function runAutomationInPage(sections) {
   for (const sec of sections) {
     const stepResult = { code: sec.code, name: sec.name, ok: false, error: null };
     const maxAttempts = 2;
+    const filledAtStart = countFilledSections();
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
+        // If a previous attempt actually succeeded (but was not detected in time),
+        // do not add a duplicate row — treat it as done.
+        if (attempt > 1 && countFilledSections() > filledAtStart) {
+          stepResult.ok = true;
+          stepResult.error = null;
+          break;
+        }
+
         let trigger = await waitFor(findEmptySectionTrigger, 3000);
 
         if (!trigger) {
@@ -602,7 +633,10 @@ async function runAutomationInPage(sections) {
         if (!row) throw new Error(`Could not find a result row for code ${sec.code} ("${sec.name}")`);
         realClick(row);
 
-        const confirmed = await waitFor(() => isSelectionConfirmed(sec.name), 3000);
+        const confirmed = await waitFor(
+          () => isSelectionConfirmed(sec.name, filledAtStart, trigger),
+          3000
+        );
         if (!confirmed) {
           throw new Error(`Clicked, but could not confirm "${sec.name}" was actually selected`);
         }
