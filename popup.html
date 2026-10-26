@@ -2,179 +2,417 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ERP AUTO PLANNER</title>
 <style>
+  /* ------------------------------------------------------------------
+     Design tokens — pattern paper, indigo ink, measuring-tape yellow
+     ------------------------------------------------------------------ */
+  :root {
+    --paper: #eceee9;
+    --surface: #ffffff;
+    --surface-sunk: #f5f6f3;
+    --line: #d9dcd5;
+    --line-strong: #bfc4ba;
+    --ink: #151a2d;
+    --ink-soft: #596074;
+    --indigo: #2b3a9e;
+    --indigo-deep: #1f2b7a;
+    --indigo-wash: #e6e9f8;
+    --tape: #f2c230;
+    --ok: #17794f;
+    --ok-wash: #e3f3ea;
+    --bad: #b3322f;
+    --bad-wash: #f9e5e3;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 7px;
+    --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans Bengali", Roboto, Arial, sans-serif;
+  }
+
   * { box-sizing: border-box; }
+  html { background: var(--paper); }
   body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    width: 360px;
-    padding: 14px;
-    background: #0f172a;
-    color: #e2e8f0;
-  }
-  h1 {
-    font-size: 15px;
-    margin: 0 0 10px;
-    color: #ffffff;
+    margin: 0 auto;
+    width: 380px;
+    padding: 0;
+    max-height: 600px;        /* Chrome's popup maximum; shorter pages stay short */
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
-  h1 img { width: 20px; height: 20px; border-radius: 5px; }
-  h2 {
-    font-size: 14px;
-    margin: 0 0 10px;
-    color: #ffffff;
+
+  /* ------------------------------------------------------------------
+     Header
+     ------------------------------------------------------------------ */
+  .masthead {
+    background: var(--indigo-deep);
+    color: #fff;
+    padding: 14px 16px 14px;
+    position: relative;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand img {
+    width: 34px; height: 34px; border-radius: 9px;
+    box-shadow: 0 0 0 1.5px rgba(255,255,255,.22);
+  }
+  .brand h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: .01em; line-height: 1.15; }
+  .brand p { margin: 2px 0 0; font-size: 11.5px; color: #b9c0ef; }
+
+  .masthead { flex: none; }
+  /* Header stays put; the page below scrolls only when it must */
+  .tabs-wrap { flex: none; padding: 12px 14px 10px; background: var(--paper); box-shadow: 0 1px 0 var(--line); position: relative; z-index: 1; }
+  .content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 14px; display: flex; flex-direction: column; }
+  .content > * { flex: none; }
+
+  /* Opened in a full browser tab: fill the window, centred, a bit wider */
+  /* Planning is the long page: let it use the full popup height */
+  body:has(#tab-planning.active) { height: 600px; }
+  body.as-tab, body.as-tab:has(#tab-planning.active) { width: min(560px, 100%); height: 100vh; max-height: none; box-shadow: 0 0 0 1px var(--line); }
+
+  /* ------------------------------------------------------------------
+     Tabs — segmented control
+     ------------------------------------------------------------------ */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    margin-bottom: 0;
+    background: #dfe2db;
+    border-radius: var(--radius-md);
+  }
+  .tabs button.tab-btn {
+    width: auto;
+    flex: 1;
+    padding: 7px 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: transparent;
+    color: var(--ink-soft);
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  .tabs button.tab-btn:hover { background: rgba(255,255,255,.55); color: var(--ink); }
+  .tabs button.tab-btn.active {
+    background: var(--surface);
+    color: var(--indigo-deep);
+    box-shadow: 0 1px 2px rgba(21,26,45,.14);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  /* Planning fills the available height: the section list takes the spare room */
+  #tab-planning.active { display: flex; flex-direction: column; flex: 1 0 auto; }
+  #tab-planning > * { flex: none; }
+  #tab-planning > #sectionList { flex: 1 1 0; }
+
+  h2 { font-size: 14px; margin: 0 0 12px; font-weight: 700; color: var(--ink); }
+
+  /* ------------------------------------------------------------------
+     Panels, lists and rows
+     ------------------------------------------------------------------ */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    margin-bottom: 12px;
   }
   .section-editor {
-    background: #1e293b;
-    border-radius: 8px;
-    padding: 8px;
-    max-height: 220px;
+    background: var(--surface-sunk);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 6px;
+    max-height: 232px;
     overflow-y: auto;
     margin-bottom: 8px;
   }
+  #sectionList { max-height: none; min-height: 150px; }
   .section-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px; margin-bottom: 4px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
   }
   .section-row:last-child { margin-bottom: 0; }
-  .reorder-btns {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    flex-shrink: 0;
-  }
+  .reorder-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
   .reorder-btns button {
-    width: 18px;
-    height: 13px;
-    min-width: 0;
-    padding: 0;
-    font-size: 8px;
-    line-height: 1;
-    background: #334155;
-    border-radius: 3px;
+    width: 20px; height: 14px; min-width: 0; padding: 0;
+    font-size: 8px; line-height: 1;
+    background: var(--indigo-wash); color: var(--indigo); border-radius: 4px;
   }
-  .reorder-btns button:hover { background: #475569; }
-  .reorder-btns button:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
-  .code-input {
-    width: 46px;
-    flex-shrink: 0;
-    padding: 5px 6px;
-    font-size: 12px;
-    border-radius: 6px;
-    border: 1px solid #334155;
-    background: #0f172a;
-    color: #e2e8f0;
+  .reorder-btns button:hover { background: #d3d9f5; }
+  .reorder-btns button:disabled { background: transparent; color: var(--line-strong); cursor: default; }
+
+  input[type="text"], .code-input, .name-input, textarea {
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    transition: border-color .12s, box-shadow .12s;
   }
-  .name-input {
-    flex: 1;
-    min-width: 0;
-    padding: 5px 6px;
-    font-size: 12px;
-    border-radius: 6px;
-    border: 1px solid #334155;
-    background: #0f172a;
-    color: #e2e8f0;
+  input::placeholder { color: #98a0b0; }
+  .code-input, .name-input {
+    padding: 6px 8px; font-size: 12.5px; min-width: 0;
+    background: var(--surface-sunk); border-color: var(--line);
   }
-  .code-input:focus, .name-input:focus, #overheadInput:focus {
-    outline: none;
-    border-color: #38bdf8;
+  .code-input { width: 48px; flex-shrink: 0; font-weight: 700; text-align: center; color: var(--indigo-deep); }
+  .name-input { flex: 1; }
+
+  input:focus-visible, button:focus-visible, .code-input:focus-visible, .name-input:focus-visible {
+    outline: 2px solid var(--indigo);
+    outline-offset: 1px;
   }
+  input:focus, .code-input:focus, .name-input:focus {
+    border-color: var(--indigo);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px var(--indigo-wash);
+  }
+
   .remove-btn {
-    width: 22px;
-    height: 22px;
-    min-width: 0;
-    flex-shrink: 0;
-    padding: 0;
-    font-size: 12px;
-    background: #7f1d1d;
-    border-radius: 6px;
+    width: 24px; height: 24px; min-width: 0; flex-shrink: 0; padding: 0;
+    font-size: 11px; background: transparent; color: #8a91a3; border-radius: 6px;
   }
-  .remove-btn:hover { background: #991b1b; }
-  .add-btn {
-    background: #334155;
-    margin-bottom: 10px;
-    font-size: 12px;
-    padding: 8px;
-  }
-  .add-btn:hover { background: #475569; }
+  .remove-btn:hover { background: var(--bad-wash); color: var(--bad); }
+
+  /* ------------------------------------------------------------------
+     Buttons — one filled action per panel, the rest quiet
+     ------------------------------------------------------------------ */
   button {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    background: #2563eb;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+    font-family: inherit;
+    width: 100%; padding: 11px 12px; border: none; border-radius: var(--radius-md);
+    background: var(--indigo); color: #fff;
+    font-size: 13px; font-weight: 650; cursor: pointer;
+    transition: background .12s, box-shadow .12s, transform .06s;
   }
-  button:hover { background: #1d4ed8; }
-  button:disabled { background: #475569; cursor: not-allowed; }
-  button.secondary { background: #059669; }
-  button.secondary:hover { background: #047857; }
-  #status, #wagesStatus {
-    margin-top: 10px;
-    font-size: 12px;
-    white-space: pre-wrap;
-    max-height: 170px;
-    overflow: auto;
-    background: #1e293b;
-    border-radius: 8px;
-    padding: 8px 10px;
+  button:hover { background: var(--indigo-deep); }
+  button:active { transform: translateY(1px); }
+  button:disabled { background: #c9cdd6; color: #fff; cursor: not-allowed; }
+  button.secondary { background: var(--indigo); }
+  button.secondary:hover { background: var(--indigo-deep); }
+
+  .add-btn {
+    background: transparent; color: var(--indigo);
+    border: 1.5px dashed #aab3e6;
+    font-size: 12.5px; padding: 7px; margin-bottom: 8px;
   }
-  #status:empty, #wagesStatus:empty { display: none; padding: 0; margin-top: 0; }
-  .ok { color: #4ade80; }
-  .fail { color: #f87171; }
-  .hint {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-top: 8px;
-    line-height: 1.5;
+  .add-btn:hover { background: var(--indigo-wash); }
+
+  /* Save ticked codes is a step, not the finish line: outlined */
+  #accSaveCheckedBtn {
+    background: var(--surface); color: var(--indigo-deep);
+    border: 1.5px solid var(--indigo);
   }
-  .divider {
-    border-top: 1px solid #334155;
-    margin: 16px 0 14px;
-    padding-top: 14px;
+  #accSaveCheckedBtn:hover { background: var(--indigo-wash); }
+  #accSaveCheckedBtn:disabled { background: var(--surface-sunk); color: #98a0b0; border-color: var(--line); }
+
+  #accClearBtn.add-btn {
+    border: none; color: var(--bad); margin: 0; padding: 6px; font-size: 12px; font-weight: 600;
   }
-  .field-label {
-    font-size: 12px;
-    color: #94a3b8;
-    margin-bottom: 4px;
-    display: block;
+  #accClearBtn.add-btn:hover { background: var(--bad-wash); }
+
+  /* ------------------------------------------------------------------
+     Results
+     ------------------------------------------------------------------ */
+  #status, #wagesStatus, #accStatus, #accSaveStatus {
+    margin-top: 10px; font-size: 12px; white-space: pre-wrap; max-height: 176px;
+    overflow: auto; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-md); padding: 8px 10px;
   }
+  #status:empty, #wagesStatus:empty, #accStatus:empty, #accSaveStatus:empty {
+    display: none; padding: 0; margin-top: 0; border: 0;
+  }
+  #status > div, #wagesStatus > div, #accStatus > div, #accSaveStatus > div { padding: 2px 0; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .fail { color: var(--bad); font-weight: 600; }
+  .hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 10px; line-height: 1.5; }
+  .hint strong { color: var(--ink); font-weight: 650; }
+  #status .hint, #wagesStatus .hint, #accStatus .hint, #accSaveStatus .hint { font-weight: 400; }
+
+  .field-label { font-size: 12px; font-weight: 650; color: var(--ink); margin-bottom: 6px; display: block; }
   #overheadInput {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid #334155;
-    background: #1e293b;
-    color: #e2e8f0;
-    font-size: 13px;
-    margin-bottom: 10px;
+    width: 100%; padding: 10px 12px; font-size: 15px; font-weight: 600; margin-bottom: 12px;
+  }
+
+  /* ------------------------------------------------------------------
+     Accessories tab — a real two-step flow
+     ------------------------------------------------------------------ */
+  .step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .step-num {
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--tape); color: var(--ink);
+    font-size: 12px; font-weight: 800; display: grid; place-items: center;
+  }
+  .step-text { font-size: 12px; color: var(--ink-soft); line-height: 1.45; padding-top: 2px; }
+  .step-text strong { color: var(--ink); font-weight: 650; }
+
+  .acc-item {
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    padding: 3px 4px 3px 10px; font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    margin-bottom: 4px;
+  }
+  .acc-item:last-child { margin-bottom: 0; }
+  .acc-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .list-head .field-label { margin: 0; }
+  .count-pill {
+    font-size: 11.5px; font-weight: 700; color: var(--indigo-deep);
+    background: var(--indigo-wash); border-radius: 999px; padding: 1px 9px;
+  }
+
+  .inline-row { display: flex; gap: 6px; margin-bottom: 10px; }
+  #accSectionCode, #accSectionName { min-width: 0; padding: 8px 10px; font-size: 12.5px; }
+  #accSectionCode { width: 84px; flex: none; font-weight: 700; text-align: center; }
+  #accSectionName { flex: 1; }
+
+  .check-row {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft);
+    margin: 10px 0 0; cursor: pointer;
+  }
+  .check-row input { margin: 0; width: 15px; height: 15px; accent-color: var(--indigo); }
+  .divider { border-top: 1px solid var(--line); margin: 14px 0; }
+  .card .divider:first-child { margin-top: 0; }
+
+  /* ------------------------------------------------------------------
+     Planning profiles
+     ------------------------------------------------------------------ */
+  .profile-bar {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 7px; margin-bottom: 8px;
+  }
+  .profile-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  #profileSelect {
+    flex: 1; min-width: 0; padding: 7px 8px; font-family: inherit; font-size: 12.5px; font-weight: 650;
+    color: var(--indigo-deep); background: var(--indigo-wash); border: 1px solid #c3caf0;
+    border-radius: var(--radius-sm); cursor: pointer;
+  }
+  #profileNameInput { flex: 1; min-width: 0; padding: 7px 9px; font-size: 12.5px; }
+  .ghost-btn {
+    width: auto; flex: none; padding: 7px 11px; font-size: 12px; font-weight: 650;
+    background: var(--surface); color: var(--indigo-deep); border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+  }
+  .ghost-btn:hover { background: var(--indigo-wash); }
+  .ghost-btn.danger { color: var(--bad); }
+  .ghost-btn.danger:hover { background: var(--bad-wash); }
+  .ghost-btn:disabled { background: var(--surface-sunk); color: #a3a9b8; border-color: var(--line); }
+  .save-btn {
+    width: auto; flex: none; padding: 7px 12px; font-size: 12px; border-radius: var(--radius-sm);
+  }
+  .profile-msg { font-size: 11.5px; color: var(--ink-soft); min-height: 16px; padding: 0 2px; }
+  .profile-msg:empty { display: none; }
+  .profile-msg.dirty { color: #8a6500; font-weight: 600; }
+  .profile-msg.good { color: var(--ok); font-weight: 600; }
+  .profile-msg.bad { color: var(--bad); font-weight: 600; }
+  .profile-row:last-of-type { margin-bottom: 4px; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
   }
 </style>
 </head>
 <body>
-  <h1><img src="icons/icon48.png" alt="" /> ERP AUTO PLANNER</h1>
+  <header class="masthead">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="" />
+      <div>
+        <h1>ERP AUTO PLANNER</h1>
+        <p>Developed by - Joyanta (265389)</p>
+      </div>
+    </div>
+  </header>
 
-  <div class="section-editor" id="sectionList"></div>
-  <button id="addSectionBtn" class="add-btn">+ Add Section</button>
-  <button id="runBtn">Run on Planning Page ▶</button>
-  <div id="status"></div>
-  <div class="hint">Use ▲▼ to reorder, ✕ to remove, or add new rows. Open the order's planning page first, then click Run.</div>
+  <nav class="tabs-wrap">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-tab="planning">Planning</button>
+      <button type="button" class="tab-btn" data-tab="wages">Wages</button>
+      <button type="button" class="tab-btn" data-tab="accessories">Accessories</button>
+    </div>
+  </nav>
 
-  <div class="divider">
-    <h2>Fill Wages</h2>
-    <label class="field-label" for="overheadInput">Total Overhead Cost (for this order)</label>
-    <input type="text" id="overheadInput" placeholder="e.g. 25.32" />
-    <button id="runWagesBtn" class="secondary">Run on Wages Page ▶</button>
-    <div id="wagesStatus"></div>
-    <div class="hint">Note: Actual Wages and Payable Wages will be set to 0.01 for every section. The total Overhead Cost is divided by however many section rows are found on the page (truncated to 2 decimals), and that per-section value is filled into every row.</div>
-  </div>
+  <main class="content">
+
+    <!-- ================= Planning tab ================= -->
+    <div class="tab-panel active" id="tab-planning">
+      <div class="profile-bar">
+        <div class="profile-row">
+          <select id="profileSelect" aria-label="Planning profile"></select>
+          <button type="button" id="profileImportBtn" class="ghost-btn" title="Import profiles from a .json file">Import</button>
+          <button type="button" id="profileExportBtn" class="ghost-btn" title="Export the selected profile to a .json file">Export</button>
+          <input type="file" id="profileImportFile" accept=".json,application/json" hidden />
+        </div>
+        <div class="profile-row">
+          <input type="text" id="profileNameInput" placeholder="Profile name" maxlength="60" />
+          <button type="button" id="profileSaveBtn" class="save-btn">Save profile</button>
+          <button type="button" id="profileDeleteBtn" class="ghost-btn danger" title="Delete this profile">Delete</button>
+        </div>
+        <div id="profileMsg" class="profile-msg" aria-live="polite"></div>
+      </div>
+      <div class="section-editor" id="sectionList"></div>
+      <button id="addSectionBtn" class="add-btn" title="Sections are selected top to bottom. Use ▲▼ to reorder and ✕ to remove.">+ Add section</button>
+      <button id="runBtn">Run on Planning page ▶</button>
+      <div id="status"></div>
+    </div>
+
+    <!-- ================= Wages tab ================= -->
+    <div class="tab-panel" id="tab-wages">
+      <div class="card">
+        <label class="field-label" for="overheadInput">Total overhead cost for this order</label>
+        <input type="text" id="overheadInput" placeholder="e.g. 25.32" inputmode="decimal" />
+        <button id="runWagesBtn" class="secondary">Run on Wages page ▶</button>
+        <div id="wagesStatus"></div>
+      </div>
+      <div class="hint" style="margin-top:0;">Actual and Payable Wages are set to 0.01 for every section. The overhead total is divided by the number of section rows on the page (cut off at 2 decimals) and filled into each row.</div>
+    </div>
+
+    <!-- ================= Accessories tab ================= -->
+    <div class="tab-panel" id="tab-accessories">
+      <div class="card">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div class="step-text">On the <strong>Bill of Materials</strong> page, tick the accessory rows you want, then save them.</div>
+        </div>
+        <button type="button" id="accSaveCheckedBtn" class="secondary">Save ticked codes from this page</button>
+        <label class="check-row"><input type="checkbox" id="accReplace" checked /> Replace the saved list (untick to add to it)</label>
+        <div id="accSaveStatus"></div>
+
+        <div class="divider"></div>
+
+        <div class="list-head">
+          <label class="field-label">Saved accessory codes</label>
+          <span class="count-pill" id="accCount">0</span>
+        </div>
+        <div class="section-editor" id="accList"></div>
+        <button type="button" id="accClearBtn" class="add-btn">Clear all saved codes</button>
+      </div>
+
+      <div class="card">
+        <div class="step">
+          <span class="step-num">2</span>
+          <div class="step-text">On the <strong>Material Requirement Planning</strong> page, enter the section.</div>
+        </div>
+        <div class="inline-row">
+          <input type="text" id="accSectionCode" placeholder="Code" />
+          <input type="text" id="accSectionName" placeholder="Section name" />
+        </div>
+        <button id="runAccBtn" class="secondary">Add Accessories on MRP Page ▶</button>
+        <div id="accStatus"></div>
+      </div>
+      <div class="hint" style="margin-top:0;">Saved codes are added as new rows. Codes already on that section are skipped, and existing rows are never removed or replaced.</div>
+    </div>
+  </main>
 
   <script src="popup.js"></script>
 </body>

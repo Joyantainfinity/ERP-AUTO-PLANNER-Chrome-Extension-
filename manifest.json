@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ERP AUTO PLANNER",
-  "version": "3.1",
+  "version": "4.2",
   "description": "Automatically selects planning sections (fully customizable list) and fills Actual/Payable Wages and Overhead Cost on the ERP Wages page — both in one click.",
   "permissions": ["activeTab", "scripting", "storage"],
   "action": {
